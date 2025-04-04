@@ -4,55 +4,74 @@ import Product from "../../models/product.model";
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ productId: string }> }
+  { params }: { params: { productId: string } }
 ) {
   await connectDB();
-  const productId = (await params).productId;
+  const productId = params.productId;
 
   try {
     const product = await Product.findById(productId);
     if (!product) {
-      return Response.json({ message: " Product not found." }, { status: 400 });
+      return new Response(JSON.stringify({ message: "Product not found." }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    return Response.json({ product }, { status: 200 });
-  } catch (error: any) {
-    return Response.json({ message: error.message }, { status: 400 });
+    return new Response(JSON.stringify({ product }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    return new Response(
+      JSON.stringify({
+        message: error instanceof Error ? error.message : "An error occurred.",
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
   }
 }
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ productId: string }> }
+  { params }: { params: { productId: string } }
 ) {
   await connectDB();
-  const productId = (await params).productId;
+  const productId = params.productId;
 
   try {
     const product = await Product.findById(productId);
 
     if (!product) {
-      return Response.json({ message: "Product not found." }, { status: 400 });
+      return new Response(JSON.stringify({ message: "Product not found." }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    // Delete the image in cloudinary first
+    // Delete the image in Cloudinary first
     const parts = product.image.split("/");
     const fileName = parts[parts.length - 1];
     const imageId = fileName.split(".")[0];
 
-    cloudinary.uploader
-      .destroy(`watches/${imageId}`)
-      .then((result) => console.log("Result", result));
+    await cloudinary.uploader.destroy(`watches/${imageId}`);
 
     // Delete from database
-
     await Product.findByIdAndDelete(productId);
 
-    return Response.json(
-      { message: "Product deleted successfully." },
-      { status: 200 }
+    return new Response(
+      JSON.stringify({ message: "Product deleted successfully." }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
     );
-  } catch (error: any) {
-    return Response.json({ message: error.message }, { status: 400 });
+  } catch (error) {
+    return new Response(
+      JSON.stringify({
+        message: error instanceof Error ? error.message : "An error occurred.",
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
   }
 }

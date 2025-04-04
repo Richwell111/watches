@@ -6,15 +6,24 @@ export async function GET(request: NextRequest) {
   try {
     await connectDB();
 
-    const searchParams = request.nextUrl.searchParams;
-    const searchTerm = searchParams.get("searchTerm");
+    // Correct way to get search parameters from NextRequest
+    const { searchParams } = new URL(request.url);
+    const searchTerm = searchParams.get("searchTerm") || "";
 
     const products = await Product.find({
       name: { $regex: searchTerm, $options: "i" },
     }).sort({ createdAt: -1 });
 
-    return Response.json({ products }, { status: 200 });
-  } catch (error: any) {
-    return Response.json({ message: error.message }, { status: 400 });
+    return new Response(JSON.stringify({ products }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    return new Response(
+      JSON.stringify({
+        message: error instanceof Error ? error.message : "An error occurred.",
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
   }
 }
