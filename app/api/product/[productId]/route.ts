@@ -1,33 +1,31 @@
 import { connectDB } from "../../db/connectDB";
 import Product from "../../models/product.model";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { productId: string } } // ✅ Correct typing
+  context: { params: { productId: string } } // ✅ Fixed typing
 ) {
   await connectDB();
-  const { productId } = params;
+
+  const { productId } = context.params; // ✅ Correctly extracting params
 
   try {
     const product = await Product.findById(productId);
     if (!product) {
-      return new Response(JSON.stringify({ message: "Product not found." }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      return NextResponse.json(
+        { message: "Product not found." },
+        { status: 404 }
+      );
     }
 
-    return new Response(JSON.stringify({ product }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return NextResponse.json({ product }, { status: 200 });
   } catch (error) {
-    return new Response(
-      JSON.stringify({
+    return NextResponse.json(
+      {
         message: error instanceof Error ? error.message : "An error occurred.",
-      }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      },
+      { status: 500 }
     );
   }
 }
