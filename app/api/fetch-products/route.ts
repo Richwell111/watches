@@ -1,7 +1,7 @@
 import { connectDB } from "../db/connectDB";
 import Product from "../models/product.model";
 
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
   await connectDB();
 
   try {
